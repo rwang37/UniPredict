@@ -2,13 +2,17 @@ import torch
 import pandas as pd
 import json
 import copy
+import os
+import sys
 import transformers
+import logging
 
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Sequence
 from torch.utils.data import Dataset
 from transformers import Trainer, GPT2LMHeadModel, AutoTokenizer, AutoConfig, AutoModelForCausalLM, TrainingArguments
 from sklearn.model_selection import train_test_split
+
 
 # GLOBAL VARIABLES
 PROMPT_DICT = {
@@ -150,10 +154,56 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
 
+def setup_model_and_tokenizer(model_name):
+    model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
+    tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            model_max_length=512,
+            padding_side="right",
+            use_fast=False,
+        )
+    if tokenizer.pad_token is None:
+        smart_tokenizer_and_embedding_resize(
+            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN, mask_token=DEFAULT_MASK_TOKEN),
+            tokenizer=tokenizer,
+            model=model,
+    )
+    return model, tokenizer
 
+if __name__ =='__main__':
+    sys.path.append(os.path.abspath('../preprocessing'))
+    from preprocessing import preprocess_by_size
 
+    # # small config
+    # train, test = preprocess_by_size(10)
 
+    # print('Preprocessing finished...\n\n')
+    
+    # model, tokenizer = setup_model_and_tokenizer('gpt2')
+    # print('model and tokenizer created...\n\n')
+
+    # data_module = make_supervised_data_module(tokenizer=tokenizer, data=train)
+    # print('data model created...\n\n')
+
+    # torch.save(data_module, 'train_prompt_small.pt')
+    # torch.save(test, 'test_prompt_small_untok.pt')
+
+    # large config
+    train, test = preprocess_by_size(50)
+
+    print('Preprocessing finished...\n\n')
+    
+    model, tokenizer = setup_model_and_tokenizer('gpt2')
+    print('model and tokenizer created...\n\n')
+
+    data_module = make_supervised_data_module(tokenizer=tokenizer, data=train)
+    print('data model created...\n\n')
+
+    torch.save(data_module, 'train_prompt_large.pt')
+    torch.save(test, 'test_prompt_large_untok.pt')
+
+    print('data saved! \n\nExiting...')
 
 
 

@@ -1,2 +1,4 @@
-
+*.pt
+*.bat
+venv
 preprocessing/.env

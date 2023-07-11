@@ -92,14 +92,15 @@ def fetch_id_dict():
 
     for item in json_data:
         if 'qualities' not in item['_source'].keys()\
-            or item['_source']['qualities']['NumberOfFeatures'] > 25:
+            or item['_source']['qualities']['NumberOfFeatures'] > 25\
+            or item['_source']['qualities']['NumberOfClasses'] == 0:
             continue
         id = item['_source']['data_id']
         name = item['_source']['name']
         openml_ids[name] = id
 
     assert openml_ids['credit-g'] == '31', 'Problems taken place in fetching the id dict.'
-    return openml_id
+    return openml_ids
 
 if __name__ == '__main__':
     # example usage

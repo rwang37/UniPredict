@@ -1,0 +1,11 @@
+torch
+pandas
+transformers
+scikit-learn
+numpy
+openai
+openml
+python-dotenv
+requests
+xgboost
+accelerate

@@ -1,9 +1,15 @@
 import json
 import requests
+import os
 
 from ast import literal_eval
 from openml_id import fetch_id_dict
 from openai_api import prompt_openai
+
+DATASET_PATH = os.path.join(
+    os.path.abspath('../preprocessing'),
+    'dataset_info.txt'
+    )
 
 def fetch_table_annotation(id, INFO_DICT):
     """
@@ -34,28 +40,28 @@ def fetch_table_annotation(id, INFO_DICT):
 
 def load_dataset_info():
     INFO_DICT = {}
-    with open('dataset_info.txt', 'r') as f:
+    with open(DATASET_PATH, 'r') as f:
         for line in f.readlines():
             recorded_key, recorded_value = line.split(',,')
             INFO_DICT[recorded_key] = literal_eval(recorded_value)
-    print(INFO_DICT)
+    # print(INFO_DICT)
     return INFO_DICT
 
 def append_dataset_info(key, value):
-    with open('dataset_info.txt', 'a') as f:
+    with open(DATASET_PATH, 'a') as f:
         f.write(f'{key},,{repr(value)}\n')
 
 def overwrite_dataset_info(INFO_DICT):
-    with open('dataset_info.txt', 'w') as f:
-    for key in info.keys():
-        f.write(f'{key},,{repr(INFO_DICT[key])}\n')
+    with open(DATASET_PATH, 'w') as f:
+        for key in info.keys():
+            f.write(f'{key},,{repr(INFO_DICT[key])}\n')
 
 
 if __name__ == '__main__':
     # example usage:
     INFO_DICT = load_dataset_info()
     ID_DICT = fetch_id_dict()
-    for dataset in ID_DICT.keys()
+    for dataset in ID_DICT.keys():
         dataset_id = ID_DICT['dataset']
         dataset_annotation = f'Info of dataset {dataset_id}: {dataset} is yet retrieved.'
         # Uncomment the following line if you want to use the openai api to 

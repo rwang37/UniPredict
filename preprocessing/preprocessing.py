@@ -3,11 +3,13 @@ import torch
 
 from sklearn.model_selection import train_test_split
 from openml_id import fetch_id_dict
-from dataset_annotations import fetch_table_annotation
-from xgboost import get_XGB_classification
+from dataset_annotations import fetch_table_annotation, load_dataset_info
+from xgb import get_XGB_classification
 
 
-def preprocess_data(path, numericalize=True):
+IGNORE_LIST = ['HotpotQA_distractor', 'DBLP-QuAD']
+
+def preprocess_data(path, ID_DICT, INFO_DICT, numericalize=False):
     """
     Get the data from path and return a dict object for key/value pairs
 
@@ -28,7 +30,7 @@ def preprocess_data(path, numericalize=True):
         target=dataset.default_target_attribute
         )
 
-    annotations = [fetch_table_annotation(ID_DICT[path])]*len(samples)
+    annotations = [fetch_table_annotation(ID_DICT[path], INFO_DICT)]*len(samples)
     return samples, column_names, labels, annotations
 
 
@@ -55,14 +57,22 @@ def label_to_prompt(label, length):
     return [prompt + '\n'] * length
 
 
-def prepare_all_data(paths, numericalize=True):
+def prepare_all_data(paths, numericalize=False):
+    ID_DICT = fetch_id_dict()
+    INFO_DICT = load_dataset_info()
+    print(f'IGNORE LIST: {IGNORE_LIST}')
+
     prompts = []
     outputs = []
     annotations = []
     label_cats = []
     for i in range(len(paths)):
+        if paths[i] in IGNORE_LIST:
+            print(f'\n\n{paths[i]} skipped\n\n')
+            continue
+        print(f'\n\n{paths[i]}\n\n')
         try:
-            data, col, labels, annotation = preprocess_data(paths[i], numericalize)
+            data, col, labels, annotation = preprocess_data(paths[i], ID_DICT, INFO_DICT, numericalize)
             prompt = data_to_prompt(data, col)
 
             categories = [cat for cat in set(labels.to_list())]
@@ -75,8 +85,8 @@ def prepare_all_data(paths, numericalize=True):
             # all_sample_labels = labels
             output, auc = get_XGB_classification(data, labels, col)
         except Exception as e:
-            # print(e)
-            raise e
+            print(e)
+            # raise e
             print(f'Something went wrong in dataset {paths[i]}. Skipping...')
             continue
 
@@ -98,6 +108,16 @@ def prepare_all_data(paths, numericalize=True):
     train = [{'prompt': train_prompts[i], 'output': train_outputs[i], 'annotations': train_annotations[i], 'labels': train_labels[i]} for i in range(len(train_prompts))]
     test = [{'prompt': test_prompts[i], 'output': test_outputs[i], 'annotations': test_annotations[i], 'labels': test_labels[i]} for i in range(len(test_prompts))]
 
+    return train, test
+
+
+def preprocess_by_size(size=0):
+    ID_DICT = fetch_id_dict()
+    if size == 0:
+        selected_datasets = list(ID_DICT.keys())[:]
+    else:
+        selected_datasets = list(ID_DICT.keys())[:size]
+    train, test = prepare_all_data(selected_datasets, False)
     return train, test
 
 
