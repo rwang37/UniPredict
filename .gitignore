@@ -2,3 +2,4 @@
 *.bat
 venv
 preprocessing/.env
+model/checkpoints
