@@ -37,13 +37,20 @@ def test_input(prompt, model):
 
 
 if __name__ == '__main__':
-    prompt = torch.load('test_prompt_large_untok.pt')
-    model = torch.load('gpt2_large.pt')
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size', type=str,  nargs='?', const='small', required=True)
+    parser.add_argument('--test-size', type=int, nargs='?', const=20, required=True)
+    args = parser.parse_args()
 
-    for i in range(100):
+    prompt = torch.load(f'test_prompt_{args.size}_untok.pt')
+    model = torch.load(f'gpt2_{args.size}.pt')
+
+    for i in range(args.test_size):
         test = prompt[i]
         output = test['output']
         test = PROMPT_DICT["prompt_input"].format_map(test)
 
         pred = test_input(test, model).split('\n')[-1]
+        print(test)
         print(f'---Pred: {pred}\n---Reference: {output}\n\n')

@@ -172,25 +172,26 @@ def setup_model_and_tokenizer(model_name):
     return model, tokenizer
 
 if __name__ =='__main__':
+    import argparse
     sys.path.append(os.path.abspath('../preprocessing'))
     from preprocessing import preprocess_by_size
 
-    # # small config
-    # train, test = preprocess_by_size(10)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size', type=str,  nargs='?', const='small', required=True)
+    args = parser.parse_args()
 
-    # print('Preprocessing finished...\n\n')
-    
-    # model, tokenizer = setup_model_and_tokenizer('gpt2')
-    # print('model and tokenizer created...\n\n')
+    size_dict = {
+        'small': 10,
+        'medium': 30,
+        'large': 50
+    }
 
-    # data_module = make_supervised_data_module(tokenizer=tokenizer, data=train)
-    # print('data model created...\n\n')
-
-    # torch.save(data_module, 'train_prompt_small.pt')
-    # torch.save(test, 'test_prompt_small_untok.pt')
-
-    # large config
-    train, test = preprocess_by_size(50)
+    if args.size in size_dict.keys():
+        train, test = preprocess_by_size(size_dict[args.size])
+    else:
+        # assume manual selection
+        selected_datasets = ['bank-marketing', 'adult', 'pendigits', 'adult-census']
+        train, test = preprocess_by_size(0, selected_datasets)
 
     print('Preprocessing finished...\n\n')
     
@@ -198,10 +199,10 @@ if __name__ =='__main__':
     print('model and tokenizer created...\n\n')
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data=train)
-    print('data model created...\n\n')
+    print('data module created...\n\n')
 
-    torch.save(data_module, 'train_prompt_large.pt')
-    torch.save(test, 'test_prompt_large_untok.pt')
+    torch.save(data_module, f'train_prompt_{args.size}.pt')
+    torch.save(test, f'test_prompt_{args.size}_untok.pt')
 
     print('data saved! \n\nExiting...')
 

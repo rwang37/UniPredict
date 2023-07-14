@@ -111,12 +111,13 @@ def prepare_all_data(paths, numericalize=False):
     return train, test
 
 
-def preprocess_by_size(size=0):
-    ID_DICT = fetch_id_dict()
-    if size == 0:
-        selected_datasets = list(ID_DICT.keys())[:]
-    else:
-        selected_datasets = list(ID_DICT.keys())[:size]
+def preprocess_by_size(size=0, selected_datasets='default'):
+    if selected_datasets == 'default':
+        ID_DICT = fetch_id_dict()
+        if size == 0:
+            selected_datasets = list(ID_DICT.keys())[:]
+        else:
+            selected_datasets = list(ID_DICT.keys())[:size]
     train, test = prepare_all_data(selected_datasets, False)
     return train, test
 
