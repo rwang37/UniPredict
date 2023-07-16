@@ -22,7 +22,7 @@ PROMPT_DICT = {
         "# Dataset description: {annotations}\n"
         "# Object description: {prompt}\n"
         "# You should return the probability of each class by: {labels}\n"
-        "# Answer: "
+        "# Answer: \n"
     )
 }
 IGNORE_INDEX = -100
@@ -202,6 +202,7 @@ if __name__ =='__main__':
     print('data module created...\n\n')
 
     torch.save(data_module, f'train_prompt_{args.size}.pt')
+    torch.save(train, f'train_prompt_{args.size}_untok.pt')
     torch.save(test, f'test_prompt_{args.size}_untok.pt')
 
     print('data saved! \n\nExiting...')

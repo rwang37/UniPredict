@@ -1,5 +1,6 @@
 *.pt
 *.bat
+model/*.out
 venv
 preprocessing/.env
 model/checkpoints

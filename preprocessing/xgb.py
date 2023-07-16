@@ -51,7 +51,7 @@ def serialize_output(preds):
     for i in preds:
         out_strs = ''
         for j, k in enumerate(i):
-            out_str = f'Class {j}: {np.round_(k, 2)}; '
+            out_str = f'class {j}: {np.round_(k, 2)}; '
             out_strs += out_str
         out_strs = out_strs[:-2] + '.'
         outputs.append(out_strs)
