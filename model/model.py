@@ -21,11 +21,11 @@ data_module = torch.load(f'train_prompt_{args.size}.pt')
 model = model.cuda()
 print('data loaded!')
 
-args = TrainingArguments("checkpoints")
-args = args.set_save(strategy="epoch", total_limit=10)
+training_args = TrainingArguments("checkpoints")
+training_args = training_args.set_save(strategy="epoch", total_limit=10)
 
 # max_grad_norm = 1
-trainer = Trainer(model=model, tokenizer=tokenizer, args=args, **data_module)
+trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 trainer.train()
 print('training finished!')
 

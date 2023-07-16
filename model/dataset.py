@@ -21,8 +21,8 @@ PROMPT_DICT = {
         "Predict the target by the given information of the object.\n"
         "# Dataset description: {annotations}\n"
         "# Object description: {prompt}\n"
-        "# Predict the target class by responding: {labels}\n"
-        "# Solution: "
+        "# You should return the probability of each class by: {labels}\n"
+        "# Answer: "
     )
 }
 IGNORE_INDEX = -100

@@ -50,11 +50,15 @@ def data_to_prompt(data, column_names):
 
 
 def label_to_prompt(label, length):
+    classification = ''
     prompt = ''
     for key in label.keys():
-        prompt_segment = f'{label[key]} for "{key}"; '
+        classification += f'class {label[key]} is xxx; '
+        prompt_segment = f'class {label[key]} stands for "{key}"; '
         prompt += prompt_segment
-    return [prompt + '\n'] * length
+    # Class 0 is xxx; class 1 is xxx; where class 0 stands for yyy; class 1 stands for yyy.
+    full_prompt = classification + 'where ' + prompt[:-2] + '.'
+    return [full_prompt + '\n'] * length
 
 
 def prepare_all_data(paths, numericalize=False):
