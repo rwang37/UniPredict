@@ -21,7 +21,7 @@ PROMPT_DICT = {
         "Predict the target by the given information of the object.\n"
         "# Dataset description: {annotations}\n"
         "# Object description: {prompt}\n"
-        "# You should return the probability of each class by: {labels}\n"
+        "# You should return the probability of each class by: \n{labels}\n"
         "# Answer: \n"
     )
 }
@@ -159,7 +159,7 @@ def setup_model_and_tokenizer(model_name):
 
     tokenizer = AutoTokenizer.from_pretrained(
             model_name,
-            model_max_length=512,
+            model_max_length=1024,
             padding_side="right",
             use_fast=False,
         )

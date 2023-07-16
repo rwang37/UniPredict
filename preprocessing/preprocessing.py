@@ -53,7 +53,7 @@ def label_to_prompt(label, length):
     classification = ''
     prompt = ''
     for key in label.keys():
-        classification += f'class {label[key]} is xxx; '
+        classification += f'class {label[key]}: xxx; '
         prompt_segment = f'class {label[key]} stands for "{key}"; '
         prompt += prompt_segment
     # Class 0 is xxx; class 1 is xxx; where class 0 stands for yyy; class 1 stands for yyy.
