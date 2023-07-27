@@ -2,12 +2,25 @@ import openml
 import torch
 
 from sklearn.model_selection import train_test_split
-from openml_id import fetch_id_dict
-from dataset_annotations import fetch_table_annotation, load_dataset_info
-from xgb import get_XGB_classification
+from .openml_id import fetch_id_dict
+from .dataset_annotations import fetch_table_annotation, load_dataset_info
+from .xgb import get_XGB_classification
+from pandas.api.types import is_numeric_dtype, is_integer_dtype
+from sklearn.preprocessing import LabelEncoder
 
 
-IGNORE_LIST = ['HotpotQA_distractor', 'DBLP-QuAD']
+IGNORE_LIST = [
+    'HotpotQA_distractor', 
+    'DBLP-QuAD',
+    'German-Credit-Risk',
+    'web_questions',
+    'Give-Me-Some-Credit',
+    'Tour-and-Travels-Customer-Churn-Prediction',
+    'freMTPL2freq',
+    'Mammographic-Mass-Data-Set',
+    'Pulsar-Dataset-HTRU2',
+    'online-shoppers-intention'
+    ]
 
 def preprocess_data(path, ID_DICT, INFO_DICT, numericalize=False):
     """
@@ -15,7 +28,6 @@ def preprocess_data(path, ID_DICT, INFO_DICT, numericalize=False):
 
     Input:
      - path: the path to the openml dataset, e.g. 'credit-g'
-     - numericalize: *deprecated*
     
     For a dataset with n rows of k features:
     Output:
@@ -25,10 +37,7 @@ def preprocess_data(path, ID_DICT, INFO_DICT, numericalize=False):
      - annotations: the dataset description (n*1). All instances from the same dataset has the same annotation value.
     """
     dataset = openml.datasets.get_dataset(path)
-    samples, labels, masks, column_names = dataset.get_data(
-        dataset_format='dataframe',
-        target=dataset.default_target_attribute
-        )
+    samples, labels, masks, column_names = dataset.get_data(dataset_format='dataframe', target=dataset.default_target_attribute)
 
     annotations = [fetch_table_annotation(ID_DICT[path], INFO_DICT)]*len(samples)
     return samples, column_names, labels, annotations
@@ -113,6 +122,55 @@ def prepare_all_data(paths, numericalize=False):
     test = [{'prompt': test_prompts[i], 'output': test_outputs[i], 'annotations': test_annotations[i], 'labels': test_labels[i]} for i in range(len(test_prompts))]
 
     return train, test
+
+
+def prepare_data_by_dataset(path):
+    ## use it in the outside
+    ID_DICT = fetch_id_dict()
+    ##
+
+    INFO_DICT = load_dataset_info()
+    # print(f'IGNORE LIST: {IGNORE_LIST}')
+
+    if path in IGNORE_LIST:
+        raise Exception(f'{path} is in the IGNORE LIST.')
+    print(f'\n\n{path}\n\n')
+
+    data, col, labels, annotation = preprocess_data(path, ID_DICT, INFO_DICT)
+
+    return transform_data(data, col, labels, annotation)
+
+
+def transform_data(data, col, labels, annotations):
+    prompt = data_to_prompt(data, col)
+
+    categories = [cat for cat in set(labels.to_list())]
+    cat_dict = {categories[i]: i for i in range(len(categories))}
+    # print(cat_dict)
+    print(len(prompt))
+
+    output, auc = get_XGB_classification(data, labels, col)
+    label_cat = label_to_prompt(cat_dict, len(prompt))
+    
+    # prompts, outputs, annotations, label_cats
+    raw_data, raw_label = numericalize(data, labels, col)
+
+    return (raw_data, raw_label), (prompt, annotations, label_cat), (output)
+
+
+def numericalize(samples, labels, column_names):
+    samples = samples.reset_index(drop=True)
+    for i in range(len(column_names)):
+        col = column_names[i]
+        if is_numeric_dtype(samples[col]) or is_integer_dtype(samples[col]):
+            continue
+        categories = [cat for cat in set(samples[col].to_list())]
+        cat_dict = {categories[i]: i for i in range(len(categories))}
+        samples[col] = samples[col].map(cat_dict).astype(int)
+    categories = [cat for cat in set(labels.to_list())]
+    cat_dict = {categories[i]: i for i in range(len(categories))}
+    labels = labels.map(cat_dict).astype(int)
+    return samples.to_numpy(), labels.to_numpy().reshape(-1, 1)
 
 
 def preprocess_by_size(size=0, selected_datasets='default'):

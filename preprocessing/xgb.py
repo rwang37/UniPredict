@@ -5,11 +5,15 @@ import numpy as np
 
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_auc_score
+from pandas.api.types import is_numeric_dtype, is_integer_dtype 
 
 
 def numericalize(samples, labels, column_names):
+    samples = samples.reset_index(drop=True)
     for i in range(len(column_names)):
         col = column_names[i]
+        if is_numeric_dtype(samples[col]) or is_integer_dtype(samples[col]):
+            continue
         categories = [cat for cat in set(samples[col].to_list())]
         cat_dict = {categories[i]: i for i in range(len(categories))}
         samples[col] = samples[col].map(cat_dict).astype(int)
@@ -27,18 +31,21 @@ def get_XGB_classification(samples, labels, column_names):
     # print(samples.shape, labels.shape)
     # le = LabelEncoder()
     # labels = le.fit_transform(labels)
+    clf = xgb.XGBClassifier(n_estimators = 100)
+    clf.fit(samples, labels)
 
-    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(xgb.XGBClassifier(n_estimators = 400), method='isotonic')
+    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic', cv='prefit')
     calibrated_clf.fit(samples, labels)
     preds = calibrated_clf.predict_proba(samples)
 
     auc = calculate_auc(labels, preds)
     outputs = serialize_output(preds)
+    print(auc)
     return outputs, auc
 
 def calculate_auc(labels, preds):
     # ground truth
-    y_gt = labels
+    y_gt = labels.squeeze(1)
     onehot = np.zeros((y_gt.size, y_gt.max() + 1))
     onehot[np.arange(y_gt.size), y_gt] = 1
     y_gt = onehot

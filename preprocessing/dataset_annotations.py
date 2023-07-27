@@ -3,11 +3,11 @@ import requests
 import os
 
 from ast import literal_eval
-from openml_id import fetch_id_dict
-from openai_api import prompt_openai
+from .openml_id import fetch_id_dict
+from .openai_api import prompt_openai
 
 DATASET_PATH = os.path.join(
-    os.path.abspath('../preprocessing'),
+    os.path.abspath('preprocessing'),
     'dataset_info.txt'
     )
 
@@ -29,30 +29,33 @@ def fetch_table_annotation(id, INFO_DICT):
     prompt = "The following is the description of a tabular dataset. Return the information for: \n"\
     "1. the target of the dataset. \n" \
     "2. the features and explanations if exist. Replace all hyphens and/or underscores with spaces. \n"\
-    "Do NOT respond anything else than the needed information.\n\n" + json_data + '\n\n' + features
+    "Do NOT respond anything else than the needed information. Make it brief but informative. Return 'N/A' if some of the needed information is missing.\n\n" + json_data + '\n\n' + features
     if id in INFO_DICT.keys():
         return INFO_DICT[id]
     print('using openai api...')
     api_output = prompt_openai(prompt)
     append_dataset_info(id, api_output)
+    print(api_output)
+    if 'N/A' in api_output:
+        raise Exception('Some information is missing. Skipping...')
     print(f'item {id} saved to local file to prevent api reusing')
     return api_output
 
-def load_dataset_info():
+def load_dataset_info(path=DATASET_PATH):
     INFO_DICT = {}
-    with open(DATASET_PATH, 'r') as f:
+    with open(path, 'r') as f:
         for line in f.readlines():
             recorded_key, recorded_value = line.split(',,')
             INFO_DICT[recorded_key] = literal_eval(recorded_value)
     # print(INFO_DICT)
     return INFO_DICT
 
-def append_dataset_info(key, value):
-    with open(DATASET_PATH, 'a') as f:
+def append_dataset_info(key, value, path=DATASET_PATH):
+    with open(path, 'a') as f:
         f.write(f'{key},,{repr(value)}\n')
 
-def overwrite_dataset_info(INFO_DICT):
-    with open(DATASET_PATH, 'w') as f:
+def overwrite_dataset_info(INFO_DICT, path=DATASET_PATH):
+    with open(path, 'w') as f:
         for key in info.keys():
             f.write(f'{key},,{repr(INFO_DICT[key])}\n')
 

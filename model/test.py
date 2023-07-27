@@ -4,7 +4,7 @@ import transformers
 import re
 
 from transformers import Trainer, GPT2LMHeadModel, AutoTokenizer, AutoConfig, AutoModelForCausalLM, TrainingArguments
-from dataset import setup_model_and_tokenizer, SupervisedDataset, DataCollatorForSupervisedDataset
+from .dataset import setup_model_and_tokenizer, SupervisedDataset, DataCollatorForSupervisedDataset
 from tqdm import tqdm
 
 PROMPT_DICT = {

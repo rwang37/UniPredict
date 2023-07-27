@@ -4,3 +4,6 @@ model/*.out
 venv
 preprocessing/.env
 model/checkpoints
+files/legacy
+files/model_checkpoints
+files/testing

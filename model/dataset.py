@@ -160,7 +160,7 @@ def setup_model_and_tokenizer(model_name):
     tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             model_max_length=1024,
-            padding_side="right",
+            padding_side="left",
             use_fast=False,
         )
     if tokenizer.pad_token is None:
