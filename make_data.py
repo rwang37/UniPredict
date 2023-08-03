@@ -75,5 +75,3 @@ def make_full_dataset():
             
 if __name__ == '__main__':
     make_full_dataset()
-## TODO: migrate dataset & model sections here
-## TODO: run a new model, compare with xgboost
