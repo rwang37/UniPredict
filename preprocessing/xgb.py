@@ -40,13 +40,16 @@ def get_XGB_classification(samples, labels, column_names):
 
     auc = calculate_auc(labels, preds)
     outputs = serialize_output(preds)
-    print(auc)
+    # print(auc)
     return outputs, auc
 
 def calculate_auc(labels, preds):
     # ground truth
-    y_gt = labels.squeeze(1)
-    onehot = np.zeros((y_gt.size, y_gt.max() + 1))
+    if len(labels.shape) > 1:
+        y_gt = labels.squeeze(1)
+    else: 
+        y_gt = labels
+    onehot = np.zeros((y_gt.size, y_gt.max().astype(int) + 1))
     onehot[np.arange(y_gt.size), y_gt] = 1
     y_gt = onehot
     # pred

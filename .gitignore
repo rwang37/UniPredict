@@ -8,4 +8,5 @@ files/legacy
 files/model_checkpoints
 files/testing
 files/checkpoint*
+files/data/kaggle/*
 .env
