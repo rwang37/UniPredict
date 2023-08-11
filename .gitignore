@@ -7,4 +7,5 @@ model/checkpoints
 files/legacy
 files/model_checkpoints
 files/testing
+files/checkpoint*
 .env
