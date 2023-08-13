@@ -45,8 +45,8 @@ def check_correctness(pred, ref):
     try:
         pred_cls = response_to_class(pred)
         ref_cls = response_to_class(ref)
-        print(pred_cls)
-        print(ref_cls)
+        # print(pred_cls)
+        # print(ref_cls)
         pred_idx = pred_cls.index(max(pred_cls))
         ref_idx = ref_cls.index(max(ref_cls))
         if pred_idx == ref_idx:

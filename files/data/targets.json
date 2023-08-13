@@ -1,9 +1,0 @@
-{
-    "california": "median_house_value",
-    "crab_age": "Age",
-    "dubai": "price",
-    "gem_price": "price",
-    "heloc": "RiskPerformance",
-    "medical_cost": "charges",
-    "salary": "Salary"
-}

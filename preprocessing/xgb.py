@@ -59,10 +59,11 @@ def calculate_auc(labels, preds):
 def serialize_output(preds):
     outputs = []
     for i in preds:
-        out_strs = ''
+        out_strs = []
         for j, k in enumerate(i):
-            out_str = f'class {j}: {np.round_(k, 2)}; '
-            out_strs += out_str
+            out_str = f'class {j}: {np.round(k, 2)}; '
+            out_strs.append(out_str)
+        out_strs = ''.join(out_strs)
         out_strs = out_strs[:-2] + '.'
         outputs.append(out_strs)
     return outputs

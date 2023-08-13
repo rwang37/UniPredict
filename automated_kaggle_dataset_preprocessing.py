@@ -11,7 +11,7 @@ import torch
 from preprocessing.openai_api import prompt_openai
 from preprocessing.xgb import *
 from sklearn.calibration import CalibratedClassifierCV
-from preprocessing.preprocessing import prepare_data_by_dataset, fetch_id_dict, transform_data
+from preprocessing.preprocessing import transform_data
 from pandas.api.types import is_numeric_dtype
 from sklearn.model_selection import train_test_split
 from math import floor, log10
@@ -165,20 +165,22 @@ def extract_metadata_from_data(path, metadata):
 
 def prepare_data(path):
     # replace the slash '/' in path by '-'
-    author, path = path.split('/')
-    path = f'{author}-{path}'
+    if '/' in path:
+        author, path = path.split('/')
+        path = f'{author}-{path}'
     file_path = os.path.join(curr_path, 'kaggle', path)
 
     # filter out the unqualified datasets
     files_lst = []
     for root, dirs, files in os.walk(file_path):
         files_lst.extend(files)
-    assert 'metadata.json' in files_lst, f'Preprocessed metadata not included in this folder.'
+    assert 'metadata.json' in files_lst, f'Preprocessed metadata not included in this folder: {files_lst}'
 
     # define paths to datasets and metadata files
     files_lst.remove('dataset-metadata.json')
     files_lst.remove('metadata.json')
-    dataset_path = os.path.join(file_path, files_lst[0])
+    csv_path = [item for item in files_lst if '.csv' in item][0]
+    dataset_path = os.path.join(file_path, csv_path)
     metadata_path = os.path.join(file_path, 'metadata.json')
 
     # open files and extract values
@@ -227,7 +229,7 @@ def prepare_data(path):
     test = ((rd_test, ro_test), (p_test, a_test, l_test), o_test)
 
     torch.save(train, os.path.join(file_path, 'train_set.pt'))
-    torch.save(train, os.path.join(file_path, 'test_set.pt'))
+    torch.save(test, os.path.join(file_path, 'test_set.pt'))
     return (train, test)
 
 
@@ -244,7 +246,6 @@ def overwrite_xgb_output(samples, labels):
     return outputs, auc
 
 
-
 if __name__ == '__main__':
     # 1. fetch data and save to folders
     # metadata_list = load_kaggle_matadata(2000)
@@ -257,6 +258,7 @@ if __name__ == '__main__':
     # preprocess_all_metadata(metadata_list, 1000)
 
     # 3. 
+    metadata_list = metadata_list[0:]
     count = 0
     for item in metadata_list:
         print(f'Preprocessing {item}. Finished {count} items')

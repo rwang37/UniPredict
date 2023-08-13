@@ -1,5 +1,6 @@
 *.pt
 *.bat
+*.pyc
 model/*.out
 venv
 preprocessing/.env
@@ -8,5 +9,6 @@ files/legacy
 files/model_checkpoints
 files/testing
 files/checkpoint*
-files/data/kaggle/*
+files/data/*
+files/logs/*
 .env

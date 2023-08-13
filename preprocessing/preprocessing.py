@@ -47,81 +47,27 @@ def data_to_prompt(data, column_names):
     listed_data = data.values.tolist()
     prompts = []
     for row in listed_data:
-        prompt = ''
+        prompt = []
         for i in range(len(column_names)):
             column = column_names[i].replace('_', ' ')
             value = row[i]
             prompt_segment = f'{column} is {value}; '
-            prompt += prompt_segment
-        prompt = prompt[:-1] + '\n'
+            prompt.append(prompt_segment)
+        prompt = ''.join(prompt)[:-2] + '.\n'
         prompts.append(prompt)
     return prompts
 
 
 def label_to_prompt(label, length):
-    classification = ''
-    prompt = ''
+    classification = []
+    prompt = []
     for key in label.keys():
-        classification += f'class {label[key]}: xxx; '
+        classification.append(f'class {label[key]}: xxx; ')
         prompt_segment = f'class {label[key]} stands for "{key}"; '
-        prompt += prompt_segment
+        prompt.append(prompt_segment)
     # Class 0 is xxx; class 1 is xxx; where class 0 stands for yyy; class 1 stands for yyy.
-    full_prompt = classification + 'where ' + prompt[:-2] + '.'
-    return [full_prompt + '\n'] * length
-
-
-def prepare_all_data(paths, numericalize=False):
-    ID_DICT = fetch_id_dict()
-    INFO_DICT = load_dataset_info()
-    print(f'IGNORE LIST: {IGNORE_LIST}')
-
-    prompts = []
-    outputs = []
-    annotations = []
-    label_cats = []
-    for i in range(len(paths)):
-        if paths[i] in IGNORE_LIST:
-            print(f'\n\n{paths[i]} skipped\n\n')
-            continue
-        print(f'\n\n{paths[i]}\n\n')
-        try:
-            data, col, labels, annotation = preprocess_data(paths[i], ID_DICT, INFO_DICT, numericalize)
-            prompt = data_to_prompt(data, col)
-
-            categories = [cat for cat in set(labels.to_list())]
-            cat_dict = {categories[i]: i for i in range(len(categories))}
-            print(cat_dict)
-            print(len(prompt))
-
-            # labels = labels.map(cat_dict).astype(int)
-            # labels = labels.to_list()
-            # all_sample_labels = labels
-            output, auc = get_XGB_classification(data, labels, col)
-        except Exception as e:
-            print(e)
-            # raise e
-            print(f'Something went wrong in dataset {paths[i]}. Skipping...')
-            continue
-
-        prompts.extend(prompt)
-        # outputs.extend(all_sample_labels)
-        outputs.extend(output)
-        annotations.extend(annotation)
-        label_cats.extend(label_to_prompt(cat_dict, len(prompt)))
-
-    train_prompts, test_prompts, train_outputs, test_outputs, train_annotations, test_annotations, train_labels, test_labels = train_test_split(
-        prompts,
-        outputs,
-        annotations,
-        label_cats,
-        test_size=0.1,
-        random_state=42
-        )
-
-    train = [{'prompt': train_prompts[i], 'output': train_outputs[i], 'annotations': train_annotations[i], 'labels': train_labels[i]} for i in range(len(train_prompts))]
-    test = [{'prompt': test_prompts[i], 'output': test_outputs[i], 'annotations': test_annotations[i], 'labels': test_labels[i]} for i in range(len(test_prompts))]
-
-    return train, test
+    full_prompt = ''.join(classification) + 'where ' + ''.join(prompt)[:-2] + '.\n'
+    return [full_prompt] * length
 
 
 def prepare_data_by_dataset(path):
@@ -148,6 +94,7 @@ def transform_data(data, col, labels, annotations):
     cat_dict = {categories[i]: i for i in range(len(categories))}
     # print(cat_dict)
     print(len(prompt))
+    assert len(prompt) < 20000, 'Too many samples in the file. Skipping...'
 
     output, auc = get_XGB_classification(data, labels, col)
     label_cat = label_to_prompt(cat_dict, len(prompt))
@@ -172,21 +119,5 @@ def numericalize(samples, labels, column_names):
     labels = labels.map(cat_dict).astype(int)
     return samples.to_numpy(), labels.to_numpy().reshape(-1, 1)
 
-
-def preprocess_by_size(size=0, selected_datasets='default'):
-    if selected_datasets == 'default':
-        ID_DICT = fetch_id_dict()
-        if size == 0:
-            selected_datasets = list(ID_DICT.keys())[:]
-        else:
-            selected_datasets = list(ID_DICT.keys())[:size]
-    train, test = prepare_all_data(selected_datasets, False)
-    return train, test
-
-
-if __name__ == '__main__':
-    ID_DICT = fetch_id_dict()
-    selected_datasets = list(ID_DICT.keys())[:2]
-    train, test = prepare_all_data(selected_datasets, False)
 
 
