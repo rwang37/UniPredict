@@ -32,9 +32,9 @@ def get_XGB_classification(samples, labels, column_names):
     # le = LabelEncoder()
     # labels = le.fit_transform(labels)
     clf = xgb.XGBClassifier(n_estimators = 100)
-    clf.fit(samples, labels)
+    # clf.fit(samples, labels)
 
-    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic', cv='prefit')
+    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic')
     calibrated_clf.fit(samples, labels)
     preds = calibrated_clf.predict_proba(samples)
 

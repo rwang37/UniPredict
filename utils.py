@@ -5,6 +5,6 @@ def read_json(path):
         data = json.load(f)
     return data
 
-def write_json(path, data):
+def save_json(path, data):
     with open(path, 'w+') as f:
         json.dump(data, f, indent=4)

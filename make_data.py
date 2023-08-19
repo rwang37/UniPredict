@@ -23,7 +23,7 @@ TEMPLATE = (
         "# Answer: \n"
     )
 
-def make_full_dataset():
+def make_full_dataset(max_len=7500, min_len=500, zero_shot=100):
     with open('files/data/kaggle_dataset_record.json', 'r') as f:
         metadata_list = json.load(f)
     dataset_list = []
@@ -54,12 +54,12 @@ def make_full_dataset():
             'output': outputs[i],
         } for i in range(len(prompts))]
 
-        if len(samples) > 7500:
+        if len(samples) > max_len:
             samples = resample(samples, n_samples=7500, replace=False, random_state=42)
-        elif len(samples) < 100:
+        elif len(samples) < zero_shot:
             zero_shot_test.extend(samples)
             continue
-        elif len(samples) > 500:
+        elif len(samples) > min_len:
             train_set.extend(samples)
             dataset_list.append((path, len(samples)))
             print(len(train_set))

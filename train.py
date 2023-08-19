@@ -19,7 +19,9 @@ def train_model(dataset='files/data/processed/trial_1/train_kaggle.pt'):
     print('training finished!')
 
     torch.save(model, 'files/data/processed/trial_1/model.pt')
+    torch.save(model.state_dict(), 'files/data/processed/trial_1/model_state_dict.pt')
     print('model saved!')
+    return model
 
 if __name__ == '__main__':
     train_model()

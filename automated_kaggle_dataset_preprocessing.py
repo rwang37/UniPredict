@@ -15,12 +15,15 @@ from preprocessing.preprocessing import transform_data
 from pandas.api.types import is_numeric_dtype
 from sklearn.model_selection import train_test_split
 from math import floor, log10
+from utils import *
 
 curr_path = os.path.join(
     os.path.dirname(os.path.realpath(__name__)),
     'files',
     'data'
 )
+
+METADATA_LIST = read_json('files/data/kaggle_dataset_record.json')
 
 def load_kaggle_matadata(max_dataset_num):
     dataset_list = []
@@ -39,14 +42,11 @@ def load_kaggle_matadata(max_dataset_num):
     print(dataset_list)
 
     metadata_list = [d.__dict__['ref'] for d in dataset_list]
-
-    with open('files/data/kaggle_dataset_record.json', 'w+') as f:
-        json.dump(metadata_list, f, indent=4)
-
+    save_json('files/data/kaggle_dataset_record.json', metadata_list)
     return metadata_list
 
-def save_metadata(metadata_list):
-    for item in metadata_list:
+def save_metadata():
+    for item in METADATA_LIST:
         author, path = item.split('/')
         save_path = f'{author}-{path}'
         download_path = os.path.join(curr_path, 'kaggle', save_path)
@@ -67,7 +67,7 @@ def save_metadata(metadata_list):
             print('failed')
             pass
 
-def preprocess_all_metadata(metadata_list, pivot):
+def preprocess_all_metadata(pivot=0):
     count = 0
     metadata_list = metadata_list[pivot:]
     for item in metadata_list:
@@ -235,9 +235,9 @@ def prepare_data(path):
 
 def overwrite_xgb_output(samples, labels):
     clf = xgboost.XGBClassifier(n_estimators = 100)
-    clf.fit(samples, labels)
+    # clf.fit(samples, labels)
 
-    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic', cv='prefit')
+    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic')
     calibrated_clf.fit(samples, labels)
     preds = calibrated_clf.predict_proba(samples)
 
@@ -247,15 +247,14 @@ def overwrite_xgb_output(samples, labels):
 
 
 if __name__ == '__main__':
+    metadata_list = METADATA_LIST
     # 1. fetch data and save to folders
     # metadata_list = load_kaggle_matadata(2000)
-    with open('files/data/kaggle_dataset_record.json', 'r') as f:
-        metadata_list = json.load(f)
-    # save_metadata(metadata_list)
+    # save_metadata()
 
     # 2. preprocess metadata into the target value, dataset descriptions and regression-classification transformation
     #  - saved to folder/metadata.json
-    # preprocess_all_metadata(metadata_list, 1000)
+    # preprocess_all_metadata(1000)
 
     # 3. 
     metadata_list = metadata_list[0:]
@@ -267,4 +266,5 @@ if __name__ == '__main__':
             count += 1
         except Exception as e:
             print(e)
+            print('Failed. Skipping...')
         print('\n\n')
