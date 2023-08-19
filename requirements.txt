@@ -12,3 +12,5 @@ accelerate
 argparse
 kaggle
 rtdl
+delu
+pytorch-tabnet

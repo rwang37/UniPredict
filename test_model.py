@@ -7,12 +7,13 @@ from model.test import *
 from sklearn.neural_network import MLPClassifier
 from model.dataset import *
 from utils import *
+from pytorch_tabnet.tab_model import TabNetClassifier
 
 def train_xgb_on_dataset(dataset):
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     x_train, y_train = data_train[0]
     clf = xgb.XGBClassifier(n_estimators=100)
-    clf.fit(x_train, y_train)
+    clf.fit(x_train, y_train.squeeze(1))
     torch.save(clf, f'files/data/kaggle/{dataset}/xgb_model.pt')
 
 
@@ -32,7 +33,7 @@ def train_mlp_on_dataset(dataset):
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     x_train, y_train = data_train[0]
     clf = MLPClassifier(random_state=1, max_iter=300)
-    clf.fit(x_train, y_train)
+    clf.fit(x_train, y_train.squeeze(1))
     torch.save(clf, f'files/data/kaggle/{dataset}/mlp_model.pt')
 
 
@@ -45,6 +46,26 @@ def test_mlp_on_dataset(dataset):
     acc = sum(correctness) / len(correctness)
     acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
     acc_dict['mlp_accuracy'] = acc
+    save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
+
+
+def train_tbn_on_dataset(dataset):
+    data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
+    x_train, y_train = data_train[0]
+    clf = TabNetClassifier()
+    clf.fit(x_train, y_train.squeeze(1))
+    torch.save(clf, f'files/data/kaggle/{dataset}/tbn_model.pt')
+
+
+def test_tbn_on_dataset(dataset):
+    data_test = torch.load(f'files/data/kaggle/{dataset}/test_set.pt')
+    x_test, y_test = data_test[0]
+    clf = torch.load(f'files/data/kaggle/{dataset}/tbn_model.pt')
+    pred = clf.predict(x_test)
+    correctness = y_test.squeeze(-1) == pred
+    acc = sum(correctness) / len(correctness)
+    acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    acc_dict['tbn_accuracy'] = acc
     save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
 
 
@@ -151,9 +172,12 @@ if __name__ == '__main__':
         name = item[0]
         print(name)
         try:
-            test_model_on_dataset(model, tokenizer, name)
+            # test_model_on_dataset(model, tokenizer, name)
             # test_xgb_on_dataset(name)
             # test_mlp_on_dataset(name)
+            train_tbn_on_dataset(name)
+            test_tbn_on_dataset(name)
         except Exception as e:
+            # raise e
             print(e)
             continue
