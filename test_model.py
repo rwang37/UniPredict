@@ -6,12 +6,14 @@ import xgboost as xgb
 from model.test import *
 from sklearn.neural_network import MLPClassifier
 from model.dataset import *
+from sklearn.utils import resample
 from utils import *
 from pytorch_tabnet.tab_model import TabNetClassifier
 
 def train_xgb_on_dataset(dataset):
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     x_train, y_train = data_train[0]
+    x_train, y_train = resample(x_train, y_train, n_samples = int(len(y_train) * 5 / 9), replace = False, random_state = 42)
     clf = xgb.XGBClassifier(n_estimators=100)
     clf.fit(x_train, y_train.squeeze(1))
     torch.save(clf, f'files/data/kaggle/{dataset}/xgb_model.pt')
@@ -24,7 +26,10 @@ def test_xgb_on_dataset(dataset):
     pred = clf.predict(x_test)
     correctness = y_test.squeeze(-1) == pred
     acc = sum(correctness) / len(correctness)
-    acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    try:
+        acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    except:
+        acc_dict = {}
     acc_dict['xgboost_accuracy'] = acc
     save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
 
@@ -32,6 +37,7 @@ def test_xgb_on_dataset(dataset):
 def train_mlp_on_dataset(dataset):
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     x_train, y_train = data_train[0]
+    x_train, y_train = resample(x_train, y_train, n_samples = int(len(y_train) * 5 / 9), replace = False, random_state = 42)
     clf = MLPClassifier(random_state=1, max_iter=300)
     clf.fit(x_train, y_train.squeeze(1))
     torch.save(clf, f'files/data/kaggle/{dataset}/mlp_model.pt')
@@ -44,7 +50,10 @@ def test_mlp_on_dataset(dataset):
     pred = clf.predict(x_test)
     correctness = y_test.squeeze(-1) == pred
     acc = sum(correctness) / len(correctness)
-    acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    try:
+        acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    except:
+        acc_dict = {}
     acc_dict['mlp_accuracy'] = acc
     save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
 
@@ -52,6 +61,7 @@ def test_mlp_on_dataset(dataset):
 def train_tbn_on_dataset(dataset):
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     x_train, y_train = data_train[0]
+    x_train, y_train = resample(x_train, y_train, n_samples = int(len(y_train) * 5 / 9), replace = False, random_state = 42)
     clf = TabNetClassifier()
     clf.fit(x_train, y_train.squeeze(1))
     torch.save(clf, f'files/data/kaggle/{dataset}/tbn_model.pt')
@@ -64,7 +74,10 @@ def test_tbn_on_dataset(dataset):
     pred = clf.predict(x_test)
     correctness = y_test.squeeze(-1) == pred
     acc = sum(correctness) / len(correctness)
-    acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    try:
+        acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    except:
+        acc_dict = {}
     acc_dict['tbn_accuracy'] = acc
     save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
 
@@ -111,7 +124,7 @@ def test_model_on_dataset(model, tokenizer, dataset):
         'items': results
     }
     # os.mkdir(f'files/logs/trial2/{dataset}')
-    save_json(f'files/logs/trial2/{dataset}/model_40000_prediction.json', dataset_outcome)
+    save_json(f'files/logs/trial2/{dataset}/model_prediction_before_finetuning.json', dataset_outcome)
 
 
 
@@ -149,7 +162,7 @@ def test_model_on_zeroshot(model, tokenizer, dataset):
         'test accuracy': acc,
         'items': results
     }
-    save_json(f'files/logs/trial2/zero_shot_prediction.json', dataset_outcome)
+    save_json(f'files/logs/trial2/fine_tuned_prediction.json', dataset_outcome)
 
 
 if __name__ == '__main__':
@@ -158,7 +171,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint', type=str, nargs='?', const=130000, required=False)
     args = parser.parse_args()
 
-    dataset_info = read_json('files/data/processed/trial_1/dataset_info.json')
+    dataset_info = read_json('files/data/processed/trial_1/zero_shot_dataset_info.json')
 
     if args.model_from == 'pretrained':
         model = GPT2LMHeadModel.from_pretrained(f'files/model_checkpoints/checkpoint-{args.checkpoint}')
@@ -166,18 +179,33 @@ if __name__ == '__main__':
         model = torch.load(f'files/data/processed/{args.checkpoint}/model.pt')
     _, tokenizer = setup_model_and_tokenizer('gpt2')
     model.eval()
-    # test_model_on_zeroshot(model, tokenizer, 'files/data/processed/trial_1/zero_shot_test.json')
+    # test_model_on_zeroshot(model, tokenizer, 'files/data/processed/trial_1/zero_shot_test_set.json')
 
     for item in dataset_info:
-        name = item[0]
+        # name = item[0]
+        name = item
         print(name)
+        acc_dict = read_json(f'files/data/kaggle/{name}/baseline_acc.json')
+        if 'ftt_accuracy' in acc_dict.keys():
+            save_json(f'files/data/kaggle/{name}/baseline_acc.json', {'ftt_accuracy': acc_dict['ftt_accuracy']})
+        else:
+            save_json(f'files/data/kaggle/{name}/baseline_acc.json', {})
         try:
-            # test_model_on_dataset(model, tokenizer, name)
-            # test_xgb_on_dataset(name)
-            # test_mlp_on_dataset(name)
+            train_mlp_on_dataset(name)
+            test_mlp_on_dataset(name)
+        except Exception as e:
+            print(e)
+
+        try:
+            train_xgb_on_dataset(name)
+            test_xgb_on_dataset(name)
+        except Exception as e:
+            print(e)
+
+        try:
             train_tbn_on_dataset(name)
             test_tbn_on_dataset(name)
         except Exception as e:
-            # raise e
             print(e)
-            continue
+        # test_model_on_dataset(model, tokenizer, name)
+        

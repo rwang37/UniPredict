@@ -11,8 +11,15 @@ import torch.nn.functional as F
 import delu
 
 from utils import *
+from sklearn.utils import resample
 
 def train_and_test_ftt(dataset):
+    # reset
+    acc_dict = read_json(f'files/data/kaggle/{dataset}/baseline_acc.json')
+    if 'ftt_accuracy' in acc_dict.keys():
+        acc_dict.pop('ftt_accuracy')
+        save_json(f'files/data/kaggle/{dataset}/baseline_acc.json', acc_dict)
+
     device = 'cuda'
     data_train = torch.load(f'files/data/kaggle/{dataset}/train_set.pt')
     data_test = torch.load(f'files/data/kaggle/{dataset}/test_set.pt')
@@ -20,6 +27,9 @@ def train_and_test_ftt(dataset):
     X = {}
     y = {}
     X['train'], y['train'] = data_train[0]
+
+    X['train'], y['train'] = resample(X['train'], y['train'], n_samples = int(len(y['train']) * 5 / 9), replace = False, random_state = 42)
+
     X['test'], y['test'] = data_test[0]
     X['train'], X['val'], y['train'], y['val'] = sklearn.model_selection.train_test_split(
         X['train'], y['train'], train_size=0.8
@@ -112,5 +122,6 @@ def train_and_test_ftt(dataset):
 
 if __name__ == '__main__':
     from display_test import exec_func_on_each_dataset
-    path = 'files/data/processed/trial_1/dataset_info.json'
+    # path = 'files/data/processed/trial_1/dataset_info.json'
+    path = 'files/data/processed/trial_1/zero_shot_dataset_info.json'
     exec_func_on_each_dataset(train_and_test_ftt, path)

@@ -8,6 +8,7 @@ def exec_func_on_each_dataset(function, path):
     outcome = []
     for item in data:
         name = item[0]
+        # name = item
         print(name)
         try:
             temp = function(name)
@@ -42,14 +43,13 @@ def get_comparison(dataset):
     return [model_acc, xgb_acc, mlp_acc, tbn_acc, ftt_acc]
 
 def to_latex(output):
-    cells = [f'{output[0][i]} & {output[1][i][0]} & {output[1][i][1]} & {output[1][i][2]}\\\\\n' for i in range(len(output[0]))]
+    cells = [f'{output[0][i]} & {output[1][i][0]} & {output[1][i][1]} & {output[1][i][2]} & {output[1][i][3]} & {output[1][i][4]}\\\\\n' for i in range(len(output[0]))]
     template = "\\begin\{center\}\n\\begin\{tabular\}{ |c|c|c|c| }\nDataset Name & Model & XGBoost & MLP\n" + ''.join(cells) + "\\hline\n\\end\{tabular\}\n\\end\{center\}"
     return template
     
 if __name__ == '__main__':
     path = 'files/data/processed/trial_1/dataset_info.json'
     output = exec_func_on_each_dataset(get_comparison, path)
-    print([item[1] for item in output])
     accs = np.array([item[1] for item in output])
     accs = np.round(accs, 4)
     output = ([item[0] for item in output], accs)
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     avg_rnk = np.average(rank, axis=0)
     print(f'{avg_acc}+-{std_acc}')
     print(avg_rnk)
-    # print(to_latex(output))
+    print(to_latex(output))
