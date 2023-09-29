@@ -1,4 +1,4 @@
-UniPredict
+## UniPredict
 UniPredict is a LLM-powered system for universal tabular prediction.
 
 ## Example Usage
