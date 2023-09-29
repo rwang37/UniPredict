@@ -1,5 +1,5 @@
-# AnyPredict2.0
-AnyPredict2.0 is a LLM-powered system for tabular prediction.
+UniPredict
+UniPredict is a LLM-powered system for universal tabular prediction.
 
 ## Example Usage
 ```
