@@ -196,7 +196,10 @@ class TabLLMTesterGroup():
                     continue
 
     def load_acc_dict(self, path='files/unified/results/tblm.json'):
-        self.acc_dict = read_json(path)
+        try:
+            self.acc_dict = read_json(path)
+        except:
+            self.acc_dict = {}
     
     def save_acc_dict(self, path='files/unified/results/tblm.json'):
         save_json(path, self.acc_dict)

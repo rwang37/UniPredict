@@ -22,7 +22,6 @@ curr_path = os.path.join(
 
 DEFAULT_DATASET_INDEXING_PATH = 'files/unified/dataset_list/'
 DEFAULT_DATASET_SAVING_PATH = 'files/separated/'
-# DEFAULT_DATASET_SAVING_PATH = 'test/'
 
 class DatasetProcessor():
     def __init__(self, max_dataset_num=2000, metadata_path=None, saving_path=None, debug=False, dataset_info_list_path=None):
@@ -40,7 +39,7 @@ class DatasetProcessor():
         save_path = self.save_path + 'datasets_after_round_1.json'
         dataset_list = []
         # process at most 2000 pages of responses. Currently, it is more than enough to go through all filtered datasets.
-        for i in range(1, 2000): 
+        for i in range(1, 2000):
             if i % 10 == 0 and self.debug:
                 print(len(dataset_list))
             temp_list = kaggle.api.dataset_list(
@@ -158,7 +157,7 @@ class DataObject():
         files_lst = []
         for root, dirs, files in os.walk(file_path):
             files_lst.extend(files)
-        assert 'metadata.json' in files_lst, f'Preprocessed metadata not included in this folder: {files_lst}'
+        assert 'metadata.json' in files_lst, f'Preprocessed metadata not included in this folder: {files_lst}, {file_path}'
 
         # define paths to datasets and metadata files
         files_lst.remove('dataset-metadata.json')

@@ -60,7 +60,7 @@ class Prompt_maker(DataObject):
     
 
 class Prompt_generator():
-    def __init__(self, metadata_path=None, saving_path=None, debug=False, dataset_info_list_path=None):
+    def __init__(self, metadata_path=None, saving_path=None, debug=False, dataset_info_list_path='files/unified/dataset_list/datasets_after_round_2.json'):
         self.debug = debug
         self.save_path = metadata_path if metadata_path else DEFAULT_PROMPT_SAVING_PATH
         self.dataset_path = saving_path if saving_path else DEFAULT_DATASET_SAVING_PATH
@@ -71,6 +71,8 @@ class Prompt_generator():
         self.prompt_makers = []
         self.zero_shot_prompts = []
         self.supervised_prompts = []
+        self.few_shot_datalist = []
+        self.supervised_datalist = []
 
     def make_all_prompts(self, output_type='Default'):
         self.prompt_makers = []
@@ -85,8 +87,10 @@ class Prompt_generator():
                 continue
             if pm.get_state() == 'zero-shot':
                 self.zero_shot_prompts.extend(pm.get_prompt())
+                self.few_shot_datalist.append(item)
             if pm.get_state() == 'supervised':
                 self.supervised_prompts.extend(pm.get_prompt())
+                self.supervised_datalist.append(item)
 
     def tokenize_supervised_prompt(self, prompt_type='prompt_input'):
         model, tokenizer = setup_model_and_tokenizer('gpt2')
@@ -94,6 +98,8 @@ class Prompt_generator():
     
     def save_tokenized_prompt(self, name='toked_train_set.pt'):
         torch.save(self.supervised_data_module, self.save_path + name)
+        save_json('files/unified/dataset_list/few_shot_datasets.json', self.few_shot_datalist)
+        save_json('files/unified/dataset_list/supervised_datasets.json', self.supervised_datalist)
         
     def show_prompt(self):
         print(self.supervised_prompts[0])

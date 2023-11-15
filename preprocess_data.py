@@ -9,7 +9,7 @@ parser.add_argument('--model-type',
 args = parser.parse_args()
 model_type = args.model_type
 
-supervised_dataset_path = 'files/unified/dataset_list/supervised_datasets.json'
+supervised_dataset_path = 'files/unified/dataset_list/datasets_after_round_2.json'
 
 if model_type == 'unipred':
     pg = Prompt_generator(dataset_info_list_path=supervised_dataset_path)

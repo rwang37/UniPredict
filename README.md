@@ -1,31 +1,50 @@
-\* This repo is a demo for addressing reproducibility concerns to the `UniPredict` framework. We are currently optimizing the codes for better readability and usability. The final release will be posted on Github after the reviewing stage finishes. 
+# UniPredict
 
-## UniPredict
+This repo is a demo for supporting the reproducibility of the `UniPredict` framework. The official repository will be released after the review process finishes.
 
-This is the official implementation for the paper `UniPredict: Large Language Models are Universal Tabular Predictors`.
-UniPredict is a LLM-powered system for universal tabular prediction.
-
-## Example Usage
+# Example Usage
 Python 3.11
-### Install Dependencies
+## Install Dependencies
 ```
 pip install -r requirements.txt
 ```
-### Download Datasets
-You can download the pre-processed datasets we have used [here](https://drive.google.com/file/d/1jnqWAPGyaAWoxV0bSlNnt-I_SH6-X7Vc/view?usp=sharing). 
+After dependencies installed, you can choose to run either from any checkpoints we provided, or a provided pipeline. For the latter, run
 
-### Run 
+```
+./run.sh
+```
+For the former, follow the steps below:
+
+## Download & Preprocess Datasets
+We provide several checkpoints for downloading and preprocessing datasets.
+
+### Start everything from scratch
+```
+python download_data.py --from-step scratch
+```
+This is not recommended as it will download > 2000 datasets to your computer. As an alternative, we provided a small subset for you to test on.
+
+### Start from metadata
+```
+python download_data.py --from-step round_1
+```
+Before running this line, you have to put a valid openai api key to `.env` file. You are not required to do your own metadata preprocessing because we have included the preprocessed metadata in each provded datasets.
+
+### Start from preprocessing
+```
+python download_data.py --from-step metadata
+```
+
+## Run 
 ```
 python preprocess_data.py --model-type unipred
-python preprocess_data.py --model-type light
-python preprocess_data.py --model-type ablation
-python train.py
+python train.py --model-type unipred
 ```
 
-### Test
+## Test
 ```
 python test_model.py
 ```
 
-### Plot Graphs
+## Plot Graphs
 Use `display_data.ipynb`.
