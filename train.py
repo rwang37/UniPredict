@@ -1,27 +1,35 @@
 import transformers
 import torch
 import numpy as np
+import os
 
-from model.dataset import *
+from preprocessing.dataset import *
 
-def train_model(dataset='files/data/processed/trial_1/train_kaggle.pt'):
+def train_model(dataset='files/unified/prompts/toked_train_set.pt', save_model='files/unified/models/unipred.pt', save_state='files/unified/models/unipred_state.pt'):
     model, tokenizer = setup_model_and_tokenizer('gpt2')
     data_module = torch.load(dataset)
     model = model.cuda()
     print('data loaded!')
 
-    training_args = TrainingArguments("files/model_checkpoints")
-    training_args = training_args.set_save(strategy="steps", steps=10000, total_limit=10)
+    training_args = TrainingArguments(
+        "files/checkpoints",
+        per_device_train_batch_size=4,
+        )
+    training_args = training_args.set_save(strategy="steps", steps=10000, total_limit=3)
 
     # max_grad_norm = 1
     trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    print(trainer.args._n_gpu)
+    print(trainer.args.parallel_mode)
     trainer.train()
     print('training finished!')
 
-    torch.save(model, 'files/data/processed/trial_1/model.pt')
-    torch.save(model.state_dict(), 'files/data/processed/trial_1/model_state_dict.pt')
+    torch.save(model, save_model)
+    torch.save(model.state_dict(), save_state)
     print('model saved!')
     return model
 
 if __name__ == '__main__':
-    train_model()
+    train_model(dataset='files/unified/prompts/toked_train_set.pt', save_model='files/unified/models/unipred.pt', save_state='files/unified/models/unipred_state.pt')
+    train_model(dataset='files/unified/prompts/toked_abl_aug_train_set.pt', save_model='files/unified/models/abl_aug.pt', save_state='files/unified/models/abl_aug_state.pt')
+    train_model(dataset='files/unified/prompts/toked_light_train_set.pt', save_model='files/unified/models/light.pt', save_state='files/unified/models/light_state.pt')

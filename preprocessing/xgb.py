@@ -1,60 +1,43 @@
 import xgboost as xgb
-import pandas as pd
 import sklearn
 import numpy as np
 
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import roc_auc_score
-from pandas.api.types import is_numeric_dtype, is_integer_dtype 
+from .utils import *
 
+class DataAugmentor():
+    """
+    Example usage:
+        >>> augmentor = DataAugmentor(samples, labels, column_names)
+        >>> outputs, auc = augmentor.generate_label_prompt()
+    """
+    def __init__(self, samples, labels, column_names=None):
+        self.samples = samples
+        self.labels = labels
+        if column_names:
+            self.column_names = column_names
+            self.numericalize_samples()
+        # if no column names are provided, assume that samples are numericalized
+        self.preds = None
 
-def numericalize(samples, labels, column_names):
-    samples = samples.reset_index(drop=True)
-    for i in range(len(column_names)):
-        col = column_names[i]
-        if is_numeric_dtype(samples[col]) or is_integer_dtype(samples[col]):
-            continue
-        categories = [cat for cat in set(samples[col].to_list())]
-        cat_dict = {categories[i]: i for i in range(len(categories))}
-        samples[col] = samples[col].map(cat_dict).astype(int)
-    categories = [cat for cat in set(labels.to_list())]
-    cat_dict = {categories[i]: i for i in range(len(categories))}
-    labels = labels.map(cat_dict).astype(int)
-    return samples, labels
+    def numericalize_samples(self):
+        self.samples, self.labels = numericalize(self.samples, self.labels, self.column_names)
 
+    def augment_label(self):
+        clf = xgb.XGBClassifier(n_estimators = 100)
+        calibrated_clf = CalibratedClassifierCV(estimator=clf, method='isotonic')
+        calibrated_clf.fit(self.samples, self.labels)
+        self.preds = calibrated_clf.predict_proba(self.samples)
+        auc = calculate_auc(self.labels, self.preds)
+        return auc
 
-def get_XGB_classification(samples, labels, column_names):
-    samples, labels = numericalize(samples, labels, column_names)
-    samples = samples.to_numpy()
-    labels = labels.to_numpy()
+    def generate_label_prompt(self, print_auc=False):
+        auc = self.augment_label()
+        if print_auc:
+            print(auc)
+        outputs = serialize_output(self.preds)
+        return outputs, auc
 
-    # print(samples.shape, labels.shape)
-    # le = LabelEncoder()
-    # labels = le.fit_transform(labels)
-    clf = xgb.XGBClassifier(n_estimators = 100)
-    # clf.fit(samples, labels)
-
-    calibrated_clf = sklearn.calibration.CalibratedClassifierCV(estimator=clf, method='isotonic')
-    calibrated_clf.fit(samples, labels)
-    preds = calibrated_clf.predict_proba(samples)
-
-    auc = calculate_auc(labels, preds)
-    outputs = serialize_output(preds)
-    # print(auc)
-    return outputs, auc
-
-def calculate_auc(labels, preds):
-    # ground truth
-    if len(labels.shape) > 1:
-        y_gt = labels.squeeze(1)
-    else: 
-        y_gt = labels
-    onehot = np.zeros((y_gt.size, y_gt.max().astype(int) + 1))
-    onehot[np.arange(y_gt.size), y_gt] = 1
-    y_gt = onehot
-    # pred
-    y_pred = preds
-    return roc_auc_score(y_gt, y_pred, average=None)
 
 def serialize_output(preds):
     outputs = []

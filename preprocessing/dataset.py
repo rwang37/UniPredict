@@ -23,6 +23,20 @@ PROMPT_DICT = {
         "# Object description: {prompt}\n"
         "# You should return the probability of each class by: \n{labels}\n"
         "# Answer: \n"
+    ),
+    "without_metadata": (
+        "Below is a dataset. Predict the target by the given information of the object.\n"
+        "# Object description: {prompt}\n"
+        "# You should return the probability of each class by: \n{labels}\n"
+        "# Answer: \n"
+    ),
+    "TabLLM": (
+        "Below is the description of a dataset, an object profile from the dataset and a target description. "
+        "Predict the target by the given information of the object.\n"
+        "# Dataset description: {annotations}\n"
+        "# Object description: {prompt}\n"
+        "# You should return your choice of class by stating the class number, {labels}\n"
+        "# Answer: \n"
     )
 }
 IGNORE_INDEX = -100
@@ -103,12 +117,17 @@ class SupervisedDataset(Dataset):
     Dataset for supervised fine-tuning.
     """
 
-    def __init__(self, tokenizer: transformers.PreTrainedTokenizer, data):
+    def __init__(self, tokenizer: transformers.PreTrainedTokenizer, data, prompt_type):
         super(SupervisedDataset, self).__init__()
         list_data_dict = data
         logging.warning("Formatting inputs...")
-        prompt_input = PROMPT_DICT["prompt_input"]
+        if prompt_type == 'TabLLM':
+            for item in list_data_dict:
+                item['labels'] = item['labels'][item['labels'].index('where'): ]
+
+        prompt_input = PROMPT_DICT[prompt_type]
         sources = [prompt_input.format_map(example) for example in list_data_dict]
+        print(sources[0])
         targets = [f"{example['output']}{tokenizer.eos_token}" for example in list_data_dict]
 
         logging.warning("Tokenizing inputs... This may take some time...")
@@ -145,11 +164,11 @@ class DataCollatorForSupervisedDataset(object):
         )
 
 
-def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data) -> Dict:
+def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data, prompt_type='prompt_input') -> Dict:
     """
     Make dataset and collator for supervised fine-tuning.
     """
-    train_dataset = SupervisedDataset(tokenizer=tokenizer, data=data)
+    train_dataset = SupervisedDataset(tokenizer=tokenizer, data=data, prompt_type=prompt_type)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
@@ -170,44 +189,4 @@ def setup_model_and_tokenizer(model_name):
             model=model,
     )
     return model, tokenizer
-
-if __name__ =='__main__':
-    import argparse
-    sys.path.append(os.path.abspath('../preprocessing'))
-    from preprocessing import preprocess_by_size
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=str,  nargs='?', const='small', required=True)
-    args = parser.parse_args()
-
-    size_dict = {
-        'small': 10,
-        'medium': 30,
-        'large': 50
-    }
-
-    if args.size in size_dict.keys():
-        train, test = preprocess_by_size(size_dict[args.size])
-    else:
-        # assume manual selection
-        selected_datasets = ['bank-marketing', 'adult', 'pendigits', 'adult-census']
-        train, test = preprocess_by_size(0, selected_datasets)
-
-    print('Preprocessing finished...\n\n')
-    
-    model, tokenizer = setup_model_and_tokenizer('gpt2')
-    print('model and tokenizer created...\n\n')
-
-    data_module = make_supervised_data_module(tokenizer=tokenizer, data=train)
-    print('data module created...\n\n')
-
-    torch.save(data_module, f'train_prompt_{args.size}.pt')
-    torch.save(train, f'train_prompt_{args.size}_untok.pt')
-    torch.save(test, f'test_prompt_{args.size}_untok.pt')
-
-    print('data saved! \n\nExiting...')
-
-
-
-
 
