@@ -1,6 +1,6 @@
 # UniPredict
 
-This repo is a demo for supporting the reproducibility of the `UniPredict` framework. The official repository will be released after the review process finishes.
+This repo is a demo for supporting the reproducibility of the [UniPredict](https://arxiv.org/abs/2310.03266) framework. The official repository will be released after the review process finishes.
 
 # Example Usage
 Python 3.11
